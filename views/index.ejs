@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('partials/head'); %>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><i class="fab fa-bitcoin"></i> Crypto Market Tracker</h1>
+      <p class="subtitle">Live prices from Nobitex</p>
+    </header>
+
+    <div class="update-info" id="updateInfo">Loading data...</div>
+
+    <div class="crypto-cards" id="cryptoCards">
+      <!-- Cards will be injected here -->
+    </div>
+
+    <div class="error-container" id="errorContainer" style="display: none;">
+      <div class="error-icon"><i class="fas fa-exclamation-circle"></i></div>
+      <h2>Oops! Couldn't load market data.</h2>
+      <p id="errorMessage">Something went wrong. Please try again later.</p>
+      <a href="/" class="refresh-btn"><i class="fas fa-sync-alt"></i> Refresh</a>
+    </div>
+
+    <div class="footer">
+      <p>Data via Nobitex API — Built with struggle By Atrin</p>
+    </div>
+  </div>
+
+  <!-- Dependencies -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial"></script>
+  <script src="https://kit.fontawesome.com/your-kit-id.js" crossorigin="anonymous"></script>
+
+  <!-- Chart service -->
+  <script src="/js/chartService.js"></script>
+  <!-- API service -->
+  <script src="/js/apiService.js"></script>
+
+  <!-- Main logic -->
+  <script>
+    const cryptoList = ['btc', 'eth', 'ltc', 'xrp', 'doge'];
+    const iconMap = {
+      btc: 'fa-bitcoin',
+      eth: 'fa-ethereum',
+      ltc: 'fa-coins',     // fallback icon
+      xrp: 'fa-water',     // or another relevant icon
+      doge: 'fa-dog'       // not fab, this works!
+    };
+
+    async function fetchMarketData() {
+      try {
+        const res = await fetch('/api/market/overview');
+        const data = await res.json();
+        const stats = data.stats;
+
+        const container = document.getElementById('cryptoCards');
+        const updateInfo = document.getElementById('updateInfo');
+        updateInfo.textContent = `Last updated: ${new Date().toLocaleString()}`;
+        container.innerHTML = '';
+
+        cryptoList.forEach(symbol => {
+          const key = `${symbol}-usdt`;
+          const crypto = stats[key];
+
+          if (!crypto) return;
+
+          const price = parseFloat(crypto.latest).toLocaleString();
+          const change = parseFloat(crypto.dayChange) || NaN;
+          const icon = iconMap[symbol] || 'fa-coins';
+          const iconClass = symbol === 'btc' || symbol === 'eth' ? 'fab' : 'fas';
+
+          const card = document.createElement('div');
+          card.className = `crypto-card ${symbol}`;
+          card.setAttribute('data-symbol', symbol);
+          card.style.cursor = 'pointer';
+          card.innerHTML = `
+            <div class="card-header">
+              <div class="crypto-title">
+                <div class="crypto-icon"><i class="${iconClass} ${icon}"></i></div>
+                <div>
+                  <div class="crypto-name">${symbol.toUpperCase()}</div>
+                  <div class="crypto-symbol">${symbol}</div>
+                </div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="price-container">
+                <div class="price-label">Current Price (USDT)</div>
+                <div class="price">$ ${price}</div>
+                <div class="price-period">${isNaN(change) ? 'N/A' : `${change.toFixed(2)}%`} in 24h</div>
+              </div>
+            </div>
+          `;
+          
+          // Add click event to navigate to the market detail page
+          card.addEventListener('click', () => {
+            window.location.href = `/market/${symbol}`;
+          });
+          
+          container.appendChild(card);
+        });
+      } catch (err) {
+        console.error(err);
+        document.getElementById('cryptoCards').style.display = 'none';
+        document.getElementById('updateInfo').style.display = 'none';
+        document.getElementById('errorContainer').style.display = 'block';
+      }
+    }
+
+    fetchMarketData();
+  </script>
+</body>
+</html>

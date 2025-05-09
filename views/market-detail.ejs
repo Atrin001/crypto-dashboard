@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('partials/head'); %>
+  <style>
+    .chart-container {
+      width: 100%;
+      height: 400px;
+      margin-bottom: 2rem;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      background-color: white;
+    }
+    
+    .stats-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+      background-color: white;
+      border-radius: 8px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .stat-title {
+      font-size: 0.9rem;
+      color: #7a7a7a;
+      margin-bottom: 0.5rem;
+    }
+    
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+    
+    .chart-tabs {
+      display: flex;
+      margin-bottom: 1rem;
+    }
+    
+    .chart-tab {
+      padding: 0.75rem 1.5rem;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      font-weight: 500;
+    }
+    
+    .chart-tab.active {
+      border-bottom: 2px solid #3861fb;
+      color: #3861fb;
+    }
+    
+    .loading-spinner {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 400px;
+    }
+    
+    .loading-spinner i {
+      font-size: 2rem;
+      color: #3861fb;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .error-message {
+      padding: 2rem;
+      text-align: center;
+      color: #ea3943;
+    }
+    
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      margin-bottom: 1rem;
+      color: #3861fb;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    
+    .back-link i {
+      margin-right: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="/" class="back-link"><i class="fas fa-arrow-left"></i> Back to Market Overview</a>
+    
+    <header>
+      <% 
+        let iconClass = 'fab fa-coins'; // default icon
+        if (symbol.toLowerCase() === 'btc') iconClass = 'fab fa-bitcoin';
+        else if (symbol.toLowerCase() === 'eth') iconClass = 'fab fa-ethereum';
+        else if (symbol.toLowerCase() === 'ltc') iconClass = 'fab fa-viacoin'; // or pick another if available
+      %>
+      <h1><i class="<%= iconClass %>"></i> <%= symbol.toUpperCase() %> Market Details</h1>
+      <p class="subtitle">Live price and market data</p>
+    </header>
+
+    <div class="stats-container" id="statsContainer">
+      <div class="stat-card">
+        <div class="stat-title">Current Price</div>
+        <div class="stat-value" id="currentPrice">Loading...</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-title">24h Change</div>
+        <div class="stat-value" id="dayChange">Loading...</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-title">24h High</div>
+        <div class="stat-value" id="dayHigh">Loading...</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-title">24h Low</div>
+        <div class="stat-value" id="dayLow">Loading...</div>
+      </div>
+    </div>
+
+    <div class="chart-tabs">
+      <div class="chart-tab active" data-period="1D">1D</div>
+      <div class="chart-tab" data-period="1W">1W</div>
+      <div class="chart-tab" data-period="1M">1M</div>
+      <div class="chart-tab" data-period="3M">3M</div>
+    </div>
+
+    <div class="chart-container" id="priceChartContainer">
+      <div class="loading-spinner">
+        <i class="fas fa-circle-notch"></i>
+      </div>
+    </div>
+    
+    <div class="chart-container" id="volumeChartContainer">
+      <div class="loading-spinner">
+        <i class="fas fa-circle-notch"></i>
+      </div>
+    </div>
+    
+    <div class="chart-container" id="marketDepthContainer">
+      <div class="loading-spinner">
+        <i class="fas fa-circle-notch"></i>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p>Data via Nobitex API — Built with struggle By Atrin</p>
+    </div>
+  </div>
+
+  <!-- Dependencies -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial"></script>
+  <script src="https://kit.fontawesome.com/your-kit-id.js" crossorigin="anonymous"></script>
+
+  <!-- Services -->
+  <script src="/js/apiService.js"></script>
+  <script src="/js/chartService.js"></script>
+  
+  <!-- Main script -->
+  <script>
+    // Market details page script
+    document.addEventListener('DOMContentLoaded', function() {
+      const symbol = '<%= symbol %>';
+      let priceChart = null;
+      let volumeChart = null;
+      let depthChart = null;
+      
+      // Get timeframe from tabs
+      const chartTabs = document.querySelectorAll('.chart-tab');
+      let activePeriod = '1D';
+      
+      // Initialize the page
+      init();
+      
+      async function init() {
+        try {
+          // Fetch market stats for this symbol
+          await loadMarketStats(symbol);
+          
+          // Load charts
+          await loadCharts(symbol, activePeriod);
+          
+          // Load market depth
+          await loadMarketDepth(symbol);
+          
+          // Setup event listeners
+          setupEventListeners();
+        } catch (error) {
+          console.error('Failed to initialize page:', error);
+          showError('Failed to load market data. Please try again later.');
+        }
+      }
+      
+      async function loadMarketStats(symbol) {
+        try {
+          const stats = await window.apiService.fetchMarketOverview();
+          const marketKey = `${symbol}-usdt`;
+          const marketData = stats[marketKey];
+          
+          if (!marketData) {
+            throw new Error('Market data not available');
+          }
+          
+          // Update stats display
+          document.getElementById('currentPrice').textContent = `$${parseFloat(marketData.latest).toLocaleString()}`;
+          
+          const dayChange = parseFloat(marketData.dayChange);
+          const dayChangeElement = document.getElementById('dayChange');
+          dayChangeElement.textContent = `${dayChange.toFixed(2)}%`;
+          dayChangeElement.style.color = dayChange >= 0 ? '#16c784' : '#ea3943';
+          
+          // Some APIs might not provide high/low directly
+          // If available, use them; otherwise, leave as placeholder
+          if (marketData.dayHigh) {
+            document.getElementById('dayHigh').textContent = `$${parseFloat(marketData.dayHigh).toLocaleString()}`;
+          }
+          
+          if (marketData.dayLow) {
+            document.getElementById('dayLow').textContent = `$${parseFloat(marketData.dayLow).toLocaleString()}`;
+          }
+        } catch (error) {
+          console.error('Failed to load market stats:', error);
+          throw error;
+        }
+      }
+      
+      async function loadCharts(symbol, period) {
+        try {
+          // Clear loading indicators
+          document.getElementById('priceChartContainer').innerHTML = '<canvas id="priceChart"></canvas>';
+          document.getElementById('volumeChartContainer').innerHTML = '<canvas id="volumeChart"></canvas>';
+          
+          // Calculate time range based on period
+          const now = Math.floor(Date.now() / 1000); // Current time in seconds
+          let fromTime;
+          let resolution;
+          
+          switch (period) {
+            case '1D':
+              fromTime = now - 24 * 60 * 60; // 1 day ago
+              resolution = '15'; // 15 minutes
+              break;
+            case '1W':
+              fromTime = now - 7 * 24 * 60 * 60; // 1 week ago
+              resolution = '60'; // 1 hour
+              break;
+            case '1M':
+              fromTime = now - 30 * 24 * 60 * 60; // 1 month ago
+              resolution = '240'; // 4 hours
+              break;
+            case '3M':
+              fromTime = now - 90 * 24 * 60 * 60; // 3 months ago
+              resolution = 'D'; // 1 day
+              break;
+            default:
+              fromTime = now - 24 * 60 * 60; // Default to 1 day
+              resolution = '15'; // 15 minutes
+          }
+          
+          // Fetch historical data
+          const data = await window.apiService.fetchHistoricalData(symbol, resolution, fromTime, now);
+          
+          // Create charts
+          const isDarkMode = false; // Implement dark mode detection if needed
+          
+          // Create price chart
+          priceChart = window.chartService.createPriceHistoryChart('priceChart', data, symbol, isDarkMode);
+          
+          // Create volume chart
+          volumeChart = window.chartService.createVolumeChart('volumeChart', data, symbol, isDarkMode);
+        } catch (error) {
+          console.error('Failed to load charts:', error);
+          document.getElementById('priceChartContainer').innerHTML = `
+            <div class="error-message">
+              <i class="fas fa-exclamation-circle"></i>
+              <p>Failed to load price chart. Please try again later.</p>
+            </div>
+          `;
+          document.getElementById('volumeChartContainer').innerHTML = `
+            <div class="error-message">
+              <i class="fas fa-exclamation-circle"></i>
+              <p>Failed to load volume chart. Please try again later.</p>
+            </div>
+          `;
+        }
+      }
+      
+      // Replace your loadMarketDepth function with this enhanced version
+
+    async function loadMarketDepth(symbol) {
+      try {
+        // Show loading indicator
+        document.getElementById('marketDepthContainer').innerHTML = `
+          <div class="loading-spinner">
+            <i class="fas fa-circle-notch"></i>
+          </div>
+        `;
+        
+        // Add retry mechanism
+        let depthData = null;
+        let attempts = 0;
+        const maxAttempts = 2;
+        
+        while (attempts < maxAttempts && !depthData) {
+          attempts++;
+          try {
+            // Fetch market depth data with timeout
+            depthData = await Promise.race([
+              window.apiService.fetchMarketDepth(symbol),
+              new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Request timeout')), 8000)
+              )
+            ]);
+          } catch (fetchError) {
+            console.warn(`Attempt ${attempts}/${maxAttempts} failed:`, fetchError);
+
+            if (attempts >= maxAttempts) {
+              throw fetchError;
+            }
+
+            // Wait before retry
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          }
+        }
+
+        // Create or update market depth chart container
+        document.getElementById('marketDepthContainer').innerHTML = '<canvas id="depthChart"></canvas>';
+
+        // Create market depth chart
+        const isDarkMode = false; // Implement dark mode detection if needed
+        depthChart = window.chartService.createMarketDepthChart('depthChart', depthData, symbol, isDarkMode);
+
+        if (!depthChart) {
+          throw new Error('Failed to create depth chart');
+        }
+      } catch (error) {
+        console.error('Failed to load market depth:', error);
+
+        // Show user-friendly error with retry button
+        document.getElementById('marketDepthContainer').innerHTML = `
+          <div class="error-message">
+            <i class="fas fa-exclamation-circle"></i>
+            <p>Failed to load market depth chart. ${error.message}</p>
+            <button id="retryDepthBtn" class="btn btn-primary mt-3">
+              <i class="fas fa-sync-alt"></i> Retry
+            </button>
+          </div>
+        `;
+        
+        // Add event listener to retry button
+        document.getElementById('retryDepthBtn')?.addEventListener('click', () => {
+          loadMarketDepth(symbol);
+        });
+      }
+    }
+      
+      function setupEventListeners() {
+        // Add click event listeners to time period tabs
+        chartTabs.forEach(tab => {
+          tab.addEventListener('click', async function() {
+            // Update active tab
+            chartTabs.forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Get selected period
+            activePeriod = this.getAttribute('data-period');
+            
+            // Show loading state
+            document.getElementById('priceChartContainer').innerHTML = `
+              <div class="loading-spinner">
+                <i class="fas fa-circle-notch"></i>
+              </div>
+            `;
+            document.getElementById('volumeChartContainer').innerHTML = `
+              <div class="loading-spinner">
+                <i class="fas fa-circle-notch"></i>
+              </div>
+            `;
+            
+            // Load charts with new period
+            await loadCharts(symbol, activePeriod);
+          });
+        });
+      }
+      
+      function showError(message) {
+        const containers = [
+          document.getElementById('priceChartContainer'),
+          document.getElementById('volumeChartContainer'),
+          document.getElementById('marketDepthContainer')
+        ];
+        
+        containers.forEach(container => {
+          container.innerHTML = `
+            <div class="error-message">
+              <i class="fas fa-exclamation-circle"></i>
+              <p>${message}</p>
+            </div>
+          `;
+        });
+      }
+    });
+  </script>
+</body>
+</html>

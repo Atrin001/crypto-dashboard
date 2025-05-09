@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('partials/head'); %>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><i class="fas fa-wallet"></i> Your Portfolio</h1>
+      <p class="subtitle">Track your crypto assets in real-time</p>
+    </header>
+
+    <div class="update-info" id="updateInfo">Loading portfolio data...</div>
+
+    <div class="crypto-cards" id="portfolioCards">
+      <!-- Cards will be rendered here -->
+    </div>
+
+    <div class="error-container" id="errorContainer" style="display: none;">
+      <div class="error-icon"><i class="fas fa-exclamation-circle"></i></div>
+      <h2>Oops! Couldn’t load your portfolio.</h2>
+      <p id="errorMessage">Try again later.</p>
+      <a href="/portfolio" class="refresh-btn"><i class="fas fa-sync-alt"></i> Refresh</a>
+    </div>
+
+    <div class="footer">
+      <p>Mock portfolio view — Customize this with actual data & login features</p>
+    </div>
+  </div>
+
+  <!-- Optional: Add Chart.js if you want to show pie/bar charts -->
+  <script>
+    // Sample static data for demonstration
+    const samplePortfolio = [
+      { symbol: "btc", amount: 0.05, price: 102070 },
+      { symbol: "eth", amount: 1.2, price: 2334.01 },
+      { symbol: "doge", amount: 5000, price: 0.205 }
+    ];
+
+    const iconMap = {
+      btc: 'bitcoin',
+      eth: 'ethereum',
+      ltc: 'litecoin',
+      xrp: 'xrp',
+      doge: 'dogecoin'
+    };
+
+    function renderPortfolio() {
+      const container = document.getElementById("portfolioCards");
+      const updateInfo = document.getElementById("updateInfo");
+
+      container.innerHTML = "";
+      updateInfo.textContent = `Last updated: ${new Date().toLocaleString()}`;
+
+      samplePortfolio.forEach(asset => {
+        const totalValue = (asset.amount * asset.price).toLocaleString();
+        const card = document.createElement("div");
+        card.className = `crypto-card ${asset.symbol}`;
+
+        card.innerHTML = `
+          <div class="card-header">
+            <div class="crypto-title">
+              <div class="crypto-icon"><i class="fab fa-${iconMap[asset.symbol] || 'coins'}"></i></div>
+              <div>
+                <div class="crypto-name">${asset.symbol.toUpperCase()}</div>
+                <div class="crypto-symbol">${asset.symbol}</div>
+              </div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="price-container">
+              <div class="price-label">Amount Owned</div>
+              <div class="price">${asset.amount}</div>
+              <div class="price-period">Total Value: ₮ ${totalValue}</div>
+            </div>
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+    }
+
+    renderPortfolio();
+  </script>
+</body>
+</html>

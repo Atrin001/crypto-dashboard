@@ -1,0 +1,237 @@
+/* === public/styles.css === */
+
+:root {
+    --primary: #f7931a;
+    --secondary: #4d4d4d;
+    --bitcoin: #f7931a;
+    --ethereum: #627eea;
+    --litecoin: #345d9d;
+    --ripple: #0f65ef;
+    --dogecoin: #c2a633;
+    --dark: #1a1a1a;
+    --light: #f8f9fa;
+    --card-bg: #ffffff;
+    --border: #e0e3eb;
+  }
+  
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f0f2f5;
+    color: var(--dark);
+    background-image: linear-gradient(to bottom right, #f8f9fa, #e9ecef);
+    min-height: 100vh;
+  }
+  
+  .container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  
+  header {
+    text-align: center;
+    margin-bottom: 40px;
+    padding-top: 20px;
+  }
+  
+  h1 {
+    font-size: 2.5em;
+    margin: 10px 0;
+    color: var(--dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  h1 i {
+    color: var(--bitcoin);
+    margin-right: 15px;
+  }
+  
+  .subtitle {
+    color: #666;
+    font-style: italic;
+    margin-bottom: 5px;
+  }
+  
+  .crypto-cards {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .crypto-card {
+    background-color: var(--card-bg);
+    border-radius: 16px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    position: relative;
+  }
+  
+  .crypto-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+  }
+  
+  .card-header {
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: var(--dark);
+    color: white;
+  }
+  
+  .crypto-title {
+    display: flex;
+    align-items: center;
+  }
+  
+  .crypto-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+    font-size: 1.1em;
+    color: white;
+  }
+  
+  .btc .crypto-icon { background-color: var(--bitcoin); }
+  .eth .crypto-icon { background-color: var(--ethereum); }
+  .ltc .crypto-icon { background-color: var(--litecoin); }
+  .xrp .crypto-icon { background-color: var(--ripple); }
+  .doge .crypto-icon { background-color: var(--dogecoin); }
+  
+  .crypto-name {
+    font-size: 1.5em;
+    font-weight: 600;
+  }
+  
+  .crypto-symbol {
+    font-size: 0.9em;
+    opacity: 0.8;
+    margin-top: 3px;
+  }
+  
+  .card-body {
+    padding: 25px;
+  }
+  
+  .price-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .price-label {
+    font-size: 0.9em;
+    color: #666;
+    margin-bottom: 5px;
+  }
+  
+  .price {
+    font-size: 2.2em;
+    font-weight: 700;
+    color: var(--dark);
+  }
+  
+  .price-period {
+    display: inline-block;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.8em;
+    font-weight: 600;
+    background-color: #e9ecef;
+    color: #666;
+    margin-top: 10px;
+  }
+  
+  .error-container {
+    text-align: center;
+    padding: 60px 20px;
+    background-color: white;
+    border-radius: 16px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+  }
+  
+  .error-icon {
+    font-size: 4em;
+    color: #dc3545;
+    margin-bottom: 20px;
+  }
+  
+  .refresh-btn {
+    display: inline-block;
+    margin-top: 25px;
+    padding: 12px 24px;
+    background-color: var(--primary);
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: background-color 0.3s;
+  }
+  
+  .refresh-btn:hover {
+    background-color: #e57e00;
+  }
+  
+  .footer {
+    text-align: center;
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    color: #888;
+    font-size: 0.9em;
+  }
+  
+  .update-info {
+    text-align: center;
+    margin: 20px 0 40px;
+    color: #666;
+    font-size: 0.9em;
+  }
+  
+  @media (min-width: 640px) {
+    .crypto-cards {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  
+  @media (max-width: 639px) {
+    .container {
+      padding: 15px;
+    }
+  
+    h1 {
+      font-size: 2em;
+    }
+  
+    .card-header {
+      padding: 15px;
+    }
+  
+    .card-body {
+      padding: 20px;
+    }
+  
+    .crypto-icon {
+      width: 36px;
+      height: 36px;
+    }
+  
+    .crypto-name {
+      font-size: 1.3em;
+    }
+  
+    .price {
+      font-size: 1.8em;
+    }
+  }
+  
